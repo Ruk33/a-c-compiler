@@ -8,13 +8,13 @@
 
 typedef char string;
 
-void str_free(string *str) {
+void string_free(string *str) {
     if (str) {
         free(str);
     }
 }
 
-size_t str_len(string *src) {
+size_t string_len(string *src) {
     size_t length = 0;
     char *next = src;
     uint32_t current_char[4];
@@ -28,11 +28,11 @@ size_t str_len(string *src) {
     return length;
 }
 
-size_t str_mem_size(string *str) {
+size_t string_mem_size(string *str) {
     return str ? (size_t) *(str - sizeof(size_t)) : 0;
 }
 
-string *str_set_mem_size(string *str, size_t new_mem) {
+string *string_set_mem_size(string *str, size_t new_mem) {
     string *result = str;
 
     if (str) {
@@ -47,9 +47,9 @@ string *str_set_mem_size(string *str, size_t new_mem) {
     return result;
 }
 
-string *str_realloc_if_required(string *str, size_t required_mem) {
+string *string_realloc_if_required(string *str, size_t required_mem) {
     string *result = str;
-    size_t str_mem = str_mem_size(result);
+    size_t str_mem = string_mem_size(result);
     size_t str_new_mem = str_mem;
 
     if (result && str_mem < required_mem) {
@@ -57,13 +57,29 @@ string *str_realloc_if_required(string *str, size_t required_mem) {
             str_new_mem *= 2;
         }
 
-        result = str_set_mem_size(result, str_new_mem);
+        result = string_set_mem_size(result, str_new_mem);
     }
 
     return result;
 }
 
-string *str_n_concat(string *dest, string *src, size_t chars_to_concat) {
+int string_is_equal(char *a, char *b) {
+    return a && b ? strcmp(a, b) == 0 : 0;
+}
+
+string *string_advance_n_chars(string *src, size_t chars_to_advance) {
+    uint32_t current_char[4];
+    int error = 0;
+
+    while (*src && chars_to_advance > 0) {
+        src = utf8_decode(src, current_char, &error);
+        chars_to_advance -= 1;
+    }
+
+    return src;
+}
+
+string *string_concat_n_chars(string *dest, string *src, size_t chars_to_concat) {
     string *result = dest;
     string *next = src;
     uint32_t current_char[4];
@@ -81,7 +97,7 @@ string *str_n_concat(string *dest, string *src, size_t chars_to_concat) {
         }
 
         required_mem = (sizeof(size_t) + strlen(dest) + next - src + 1) * sizeof(string);
-        result = str_realloc_if_required(result, required_mem);
+        result = string_realloc_if_required(result, required_mem);
 
         strncat(result, src, next - src);
     }
@@ -89,8 +105,14 @@ string *str_n_concat(string *dest, string *src, size_t chars_to_concat) {
     return result;
 }
 
-string *str_concat(string *dest, string *src) {
-    return str_n_concat(dest, src, src ? str_len(src) : 0);
+string *string_concat(string *dest, string *src) {
+    return string_concat_n_chars(dest, src, src ? string_len(src) : 0);
+}
+
+void string_clear(string *str) {
+    if (str) {
+        str[0] = 0;
+    }
 }
 
 string *new_string(char *content) {
@@ -98,5 +120,5 @@ string *new_string(char *content) {
 
     *str = STRING_MEMORY_SIZE;
 
-    return str_concat(sizeof(size_t) + str, content);
+    return string_concat(sizeof(size_t) + str, content);
 }

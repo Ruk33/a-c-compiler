@@ -28,7 +28,23 @@ position *position_clone(position *pos) {
     return pos ? new_position(pos->line_start, pos->line_end, pos->col_start, pos->col_end) : NULL;
 }
 
-void free_position(position *pos) {
+size_t position_line_start(position *pos) {
+    return pos ? pos->line_start : 0;
+}
+
+size_t position_line_end(position *pos) {
+    return pos ? pos->line_end : 0;
+}
+
+size_t position_col_start(position *pos) {
+    return pos ? pos->col_start : 0;
+}
+
+size_t position_col_end(position *pos) {
+    return pos ? pos->col_end : 0;
+}
+
+void position_free(position *pos) {
     if (pos) {
         free(pos);
     }
